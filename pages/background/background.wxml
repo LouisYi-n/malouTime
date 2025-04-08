@@ -1,0 +1,45 @@
+<view class="container">
+  <view class="section-title">背景颜色</view>
+  <view class="color-grid">
+    <view class="color-item {{currentColor === 'mint' ? 'selected' : ''}} mint" 
+          data-color="mint" bindtap="onColorSelect">
+      <text>薄荷绿</text>
+    </view>
+    <view class="color-item {{currentColor === 'lavender' ? 'selected' : ''}} lavender" 
+          data-color="lavender" bindtap="onColorSelect">
+      <text>薰衣草紫</text>
+    </view>
+    <view class="color-item {{currentColor === 'skyblue' ? 'selected' : ''}} skyblue" 
+          data-color="skyblue" bindtap="onColorSelect">
+      <text>天空蓝</text>
+    </view>
+    <view class="color-item {{currentColor === 'pink' ? 'selected' : ''}} pink" 
+          data-color="pink" bindtap="onColorSelect">
+      <text>樱花粉</text>
+    </view>
+    <view class="color-item {{currentColor === 'cream' ? 'selected' : ''}} cream" 
+          data-color="cream" bindtap="onColorSelect">
+      <text>奶油黄</text>
+    </view>
+    <view class="color-item {{currentColor === 'coral' ? 'selected' : ''}} coral" 
+          data-color="coral" bindtap="onColorSelect">
+      <text>珊瑚橙</text>
+    </view>
+    <view class="color-item {{currentColor === 'tiffany' ? 'selected' : ''}} tiffany" 
+          data-color="tiffany" bindtap="onColorSelect">
+      <text>蒂芙尼蓝</text>
+    </view>
+    <view class="color-item {{currentColor === 'purple' ? 'selected' : ''}} purple" 
+          data-color="purple" bindtap="onColorSelect">
+      <text>香芋紫</text>
+    </view>
+    <view class="color-item {{currentColor === 'morandiGreen' ? 'selected' : ''}} morandi-green" 
+          data-color="morandiGreen" bindtap="onColorSelect">
+      <text>莫兰迪绿</text>
+    </view>
+    <view class="color-item {{currentColor === 'morandiPink' ? 'selected' : ''}} morandi-pink" 
+          data-color="morandiPink" bindtap="onColorSelect">
+      <text>莫兰迪粉</text>
+    </view>
+  </view>
+</view> 

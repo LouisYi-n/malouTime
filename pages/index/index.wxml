@@ -1,0 +1,93 @@
+<!--index.wxml-->
+<navigation-bar 
+  title="牛马时钟"
+  back="{{false}}"
+  color="black"
+  background="{{backgroundColor}}"
+/>
+
+<view class="container" style="background-color: {{backgroundColor}};">
+  <!-- 下班倒计时卡片 -->
+  <view class="countdown-card" wx:if="{{cardSettings[1].enabled}}">
+    <view class="countdown-title">距离下班还有</view>
+    <view class="countdown-time">
+      <view class="time-block">{{countdown.hours}}</view>
+      <view class="time-label">时</view>
+      <view class="time-block">{{countdown.minutes}}</view>
+      <view class="time-label">分</view>
+      <view class="time-block">{{countdown.seconds}}</view>
+      <view class="time-label">秒</view>
+    </view>
+    <view class="work-info">
+      <view class="work-time">下班时间：{{workEndTime}}</view>
+      <view class="work-status">当前状态：{{workStatus}}</view>
+    </view>
+  </view>
+
+  <!-- 今日收入卡片 -->
+  <view class="income-card" wx:if="{{cardSettings[0].enabled}}">
+    <view class="income-title">今日打工已赚</view>
+    <view class="income-amount">¥{{todayEarnings}}</view>
+  </view>
+
+  <!-- 收入信息网格 -->
+  <view class="income-grid" wx:if="{{cardSettings[0].enabled}}">
+    <view class="income-item">
+      <view class="income-label">月薪</view>
+      <view class="income-value">¥{{monthlySalary}}</view>
+    </view>
+    <view class="income-item">
+      <view class="income-label">时薪</view>
+      <view class="income-value">¥{{hourlyRate}}</view>
+    </view>
+    <view class="income-item">
+      <view class="income-label">本月打工已赚</view>
+      <view class="income-value">¥{{monthEarnings}}</view>
+    </view>
+    <view class="income-item">
+      <view class="income-label">今年打工已赚</view>
+      <view class="income-value">¥{{yearEarnings}}</view>
+    </view>
+  </view>
+
+  <!-- 发薪日倒计时 -->
+  <view class="info-card" wx:if="{{cardSettings[4].enabled}}">
+    <view class="info-title">距离发工资还有</view>
+    <view class="info-value">{{paydayCountdown}}</view>
+  </view>
+
+  <!-- 摸鱼计时 -->
+  <view class="info-card" wx:if="{{cardSettings[2].enabled}}">
+    <view class="info-title">{{slackingStatus}}</view>
+    <view class="info-value">{{slackingTime}}</view>
+    <button class="slacking-btn {{!canSlack ? 'disabled' : ''}}" 
+            style="background: {{!canSlack ? '#ccc' : backgroundColor}}" 
+            bindtap="toggleSlacking">
+      {{slackingBtnText}}
+    </button>
+  </view>
+
+  <!-- 退休倒计时 -->
+  <view class="info-card" wx:if="{{cardSettings[5].enabled}}">
+    <view class="info-title">距离退休</view>
+    <view class="info-value">{{retirementDays}}天</view>
+  </view>
+
+  <!-- 入职天数 -->
+  <view class="info-card" wx:if="{{cardSettings[6].enabled}}">
+    <view class="info-title">已入职</view>
+    <view class="info-value">{{employmentDays}}天</view>
+  </view>
+
+  <!-- 首次使用弹窗 -->
+  <view class="setup-modal" wx:if="{{showSetupModal}}">
+    <view class="modal-content">
+      <view class="modal-title">首次使用</view>
+      <view class="modal-text">请先在【我的】-【基础设置】中设置您的工作信息</view>
+      <view class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" bindtap="closeSetupModal">稍后设置</button>
+        <button class="modal-btn" bindtap="goToSettings">去设置</button>
+      </view>
+    </view>
+  </view>
+</view>

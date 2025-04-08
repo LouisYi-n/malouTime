@@ -1,0 +1,40 @@
+<view class="container">
+  <view class="menu-card">
+    <navigator url="/pages/profile/basic-settings/basic-settings" class="menu-item">
+      <view class="menu-icon">
+        <image src="/assets/icons/settings.png" mode="aspectFit" class="icon-blue"></image>
+      </view>
+      <view class="menu-text">基础设置</view>
+      <view class="menu-arrow">></view>
+    </navigator>
+
+    <navigator url="/pages/profile/card-settings/card-settings" class="menu-item">
+      <view class="menu-icon">
+        <image src="/assets/icons/cards.png" mode="aspectFit" class="icon-orange"></image>
+      </view>
+      <view class="menu-text">卡片设置</view>
+      <view class="menu-arrow">></view>
+    </navigator>
+
+    <view class="menu-item" bindtap="showResetConfirm">
+      <view class="menu-icon">
+        <image src="/assets/icons/reset.png" mode="aspectFit" class="icon-red"></image>
+      </view>
+      <view class="menu-text">重置数据</view>
+      <view class="menu-arrow">></view>
+    </view>
+
+  </view>
+</view>
+
+<!-- Reset Confirmation Modal -->
+<view class="modal" wx:if="{{showResetModal}}">
+  <view class="modal-content">
+    <view class="modal-title">确认重置</view>
+    <view class="modal-text">此操作将清除所有本地数据，确认要重置吗？</view>
+    <view class="modal-buttons">
+      <button bindtap="cancelReset">取消</button>
+      <button bindtap="confirmReset">确认</button>
+    </view>
+  </view>
+</view> 

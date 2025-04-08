@@ -1,0 +1,19 @@
+<navigation-bar 
+  title="卡片设置"
+  back="true"
+  color="black"
+  background="#fff"
+/>
+
+<scroll-view scroll-y class="scroll-container">
+  <view class="container">
+    <view class="card-list">
+      <view class="card-item" wx:for="{{cardSettings}}" wx:key="id">
+        <view class="card-info">
+          <view class="card-title">{{item.name}}</view>
+        </view>
+        <switch checked="{{item.enabled}}" bindchange="onSwitchChange" data-id="{{item.id}}" color="#007AFF"/>
+      </view>
+    </view>
+  </view>
+</scroll-view> 

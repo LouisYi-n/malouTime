@@ -1,0 +1,21 @@
+<navigation-bar 
+  title="分享"
+  back="{{false}}"
+  color="black"
+  background="{{backgroundColor}}"
+/>
+
+<view class="container" style="background-color: {{backgroundColor}};">
+  <view class="share-card">
+    <view class="share-title">分享给好友</view>
+    <view class="share-desc">让更多的小伙伴一起使用时间牛马吧！</view>
+    <button class="share-btn" open-type="share" bindtap="onShareClick">
+      <image class="share-icon" src="/assets/icons/share-friends.png" mode="aspectFit"></image>
+      <text>分享给好友</text>
+    </button>
+    <button class="share-btn" open-type="shareTimeline" bindtap="onShareClick">
+      <image class="share-icon" src="/assets/icons/share-moments.png" mode="aspectFit"></image>
+      <text>分享到朋友圈</text>
+    </button>
+  </view>
+</view> 

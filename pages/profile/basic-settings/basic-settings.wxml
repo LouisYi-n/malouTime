@@ -1,0 +1,91 @@
+<navigation-bar 
+  title="基础设置"
+  back="true"
+  color="black"
+  background="#fff"
+/>
+
+<scroll-view scroll-y class="scroll-container">
+  <view class="container">
+    <!-- 基本设置卡片 -->
+    <view class="setting-card">
+      <view class="card-title">基本设置</view>
+      <view class="setting-item">
+        <view class="setting-label">月薪(元)</view>
+        <input type="number" class="setting-input" value="{{salary}}" placeholder="请输入月薪" bindinput="onSalaryInput"/>
+      </view>
+    </view>
+
+    <!-- 工作时间卡片 -->
+    <view class="setting-card">
+      <view class="card-title">工作时间</view>
+      <view class="setting-item">
+        <view class="setting-label">上班时间</view>
+        <picker mode="time" value="{{workStartTime}}" bindchange="onWorkStartTimeChange">
+          <view class="picker-text">{{workStartTime}}</view>
+        </picker>
+      </view>
+      <view class="setting-item">
+        <view class="setting-label">下班时间</view>
+        <picker mode="time" value="{{workEndTime}}" bindchange="onWorkEndTimeChange">
+          <view class="picker-text">{{workEndTime}}</view>
+        </picker>
+      </view>
+      <view class="setting-item">
+        <view class="setting-label">午休时间</view>
+        <switch checked="{{hasLunchBreak}}" bindchange="onLunchBreakChange" color="#007AFF"/>
+      </view>
+      <block wx:if="{{hasLunchBreak}}">
+        <view class="setting-item sub-item">
+          <view class="setting-label">开始时间</view>
+          <picker mode="time" value="{{lunchStartTime}}" bindchange="onLunchStartTimeChange">
+            <view class="picker-text">{{lunchStartTime}}</view>
+          </picker>
+        </view>
+        <view class="setting-item sub-item">
+          <view class="setting-label">结束时间</view>
+          <picker mode="time" value="{{lunchEndTime}}" bindchange="onLunchEndTimeChange">
+            <view class="picker-text">{{lunchEndTime}}</view>
+          </picker>
+        </view>
+      </block>
+    </view>
+
+    <!-- 工作日设置卡片 -->
+    <view class="setting-card">
+      <view class="card-title">工作日设置</view>
+      <view class="weekday-grid">
+        <view class="weekday-item {{workdays[0] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="0">一</view>
+        <view class="weekday-item {{workdays[1] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="1">二</view>
+        <view class="weekday-item {{workdays[2] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="2">三</view>
+        <view class="weekday-item {{workdays[3] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="3">四</view>
+        <view class="weekday-item {{workdays[4] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="4">五</view>
+        <view class="weekday-item {{workdays[5] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="5">六</view>
+        <view class="weekday-item {{workdays[6] ? 'active' : ''}}" bindtap="toggleWorkday" data-index="6">日</view>
+      </view>
+    </view>
+
+    <!-- 其他设置卡片 -->
+    <view class="setting-card">
+      <view class="card-title">其他设置</view>
+      <view class="setting-item">
+        <view class="setting-label">发薪日</view>
+        <picker mode="selector" range="{{payDays}}" value="{{payDayIndex}}" bindchange="onPayDayChange">
+          <view class="picker-text">每月{{payDays[payDayIndex]}}号</view>
+        </picker>
+      </view>
+      <view class="setting-item">
+        <view class="setting-label">入职时间</view>
+        <picker mode="date" value="{{joinDate}}" bindchange="onJoinDateChange">
+          <view class="picker-text">{{joinDate}}</view>
+        </picker>
+      </view>
+      <view class="setting-item">
+        <view class="setting-label">退休时间</view>
+        <picker mode="date" value="{{retireDate}}" bindchange="onRetireDateChange">
+          <view class="picker-text">{{retireDate}}</view>
+        </picker>
+      </view>
+    </view>
+  </view>
+</scroll-view> 

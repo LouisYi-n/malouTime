@@ -1,0 +1,68 @@
+page {
+  min-height: 100vh;
+  padding: 0;
+  margin: 0;
+}
+
+.container {
+  padding: 12rpx;
+  margin: 0;
+  width: 100%;
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
+}
+
+.share-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12rpx;
+  padding: 32rpx;
+  margin: 24rpx;
+  backdrop-filter: blur(10px);
+}
+
+.share-title {
+  font-size: 36rpx;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  margin-bottom: 16rpx;
+}
+
+.share-desc {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  margin-bottom: 48rpx;
+}
+
+.share-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 24rpx 0 !important;
+  height: 88rpx;
+  border-radius: 44rpx !important;
+  background: var(--theme-color, #FFB74D);
+  color: #fff;
+  font-size: 32rpx;
+  border: none;
+  transition: opacity 0.3s ease;
+}
+
+.share-btn:not(:last-child) {
+  margin-bottom: 24rpx !important;
+}
+
+.share-btn::after {
+  border: none;
+}
+
+.share-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 12rpx;
+}
+
+.share-btn:active {
+  opacity: 0.8;
+} 
