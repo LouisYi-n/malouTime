@@ -17,9 +17,9 @@ page, view, text, button {
   min-height: 100vh;
   transition: background-color 0.3s ease;
   gap: 8rpx;
-  padding: 4rpx;
+  padding: 8rpx;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: scroll;
 }
 
 .current-time {
@@ -186,7 +186,7 @@ page, view, text, button {
 }
 
 .slacking-btn::after {
-  border: none;
+  border: none !important;
 }
 
 /* 首次使用弹窗 */

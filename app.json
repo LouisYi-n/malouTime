@@ -1,4 +1,10 @@
 {
+  "settings": {
+    "miniprogramRoot": "./",
+    "minified": true,
+    "enhance": true,
+    "minSdkVersion": "2.29.2"
+  },
   "pages": [
     "pages/index/index",
     "pages/share/share",
