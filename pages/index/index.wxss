@@ -12,11 +12,14 @@ page, view, text, button {
 }
 
 .container {
-  padding: 24rpx 16rpx;
   margin: 0;
   width: 100%;
   min-height: 100vh;
   transition: background-color 0.3s ease;
+  gap: 8rpx;
+  padding: 4rpx;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .current-time {
@@ -127,6 +130,16 @@ page, view, text, button {
   font-size: 28rpx;
   color: #FF6B6B;
   font-weight: bold;
+}
+
+.income-grid .income-item:nth-child(1),
+.income-grid .income-item:nth-child(2) {
+  grid-row: 1;
+}
+
+.income-grid .income-item:nth-child(3),
+.income-grid .income-item:nth-child(4) {
+  grid-row: 2;
 }
 
 /* 信息卡片 */
