@@ -9,8 +9,8 @@ Page({
       minutes: '00',
       seconds: '00'
     },
-    workEndTime: '--:--',
-    workStatus: '非工作时间',
+    workEndTime: '18:00',
+    workStatus: '工作时间',
     todayEarnings: '0.00',
     monthlySalary: '0.00',
     hourlyRate: '0.00',
@@ -83,7 +83,13 @@ Page({
         enabled: true
       }
     ],
-    backgroundColor: getApp().globalData.backgroundColor || '#FFE7BA'
+    backgroundColor: getApp().globalData.backgroundColor || '#FFE7BA',
+    timer: null,
+    earningsTimer: null,
+    mainTimer: null,
+    slackingTimer: null,
+    lastCalculatedTime: null,
+    accumulatedEarnings: 0
   },
 
   onLoad() {
@@ -121,7 +127,8 @@ Page({
       wx.setStorageSync('cardSettings', this.data.cardSettings)
     }
     
-    this.startTimer()
+    // 启动主计时器
+    this.startMainTimer()
   },
 
   onShow() {
@@ -131,6 +138,7 @@ Page({
     if (backgroundColor) {
       this.setData({ backgroundColor })
     }
+    
     // 重新加载设置
     const settings = wx.getStorageSync('settings')
     const cardSettings = wx.getStorageSync('cardSettings')
@@ -142,58 +150,97 @@ Page({
       this.setData({ cardSettings })
     }
     
-    this.updateAllCalculations()
+    // 重启主计时器
+    this.startMainTimer()
   },
 
-  startTimer() {
-    // 更新当前时间和各种计算
-    this.updateTime()
-    setInterval(() => {
-      this.updateTime()
-    }, 1000)
+  onHide() {
+    this.stopAllTimers()
   },
 
-  updateTime() {
-    const now = new Date()
-    const timeString = now.toLocaleString('zh-CN', {
-      hour12: false
-    }).replace(/\//g, '-')
+  onUnload() {
+    this.stopAllTimers()
+  },
 
-    this.setData({
-      currentTime: timeString
+  stopAllTimers() {
+    if (this.data.mainTimer) {
+      clearInterval(this.data.mainTimer)
+      this.data.mainTimer = null
+    }
+    if (this.data.slackingTimer) {
+      clearInterval(this.data.slackingTimer)
+      this.data.slackingTimer = null
+    }
+  },
+
+  startMainTimer() {
+    if (this.data.mainTimer) {
+      clearInterval(this.data.mainTimer)
+    }
+
+    // 初始化累计收入
+    this.setData({ 
+      lastCalculatedTime: new Date(),
+      accumulatedEarnings: 0 
     })
 
-    this.updateAllCalculations()
+    // 立即执行一次更新
+    this.updateAll()
+
+    // 设置计时器每秒更新
+    const mainTimer = setInterval(() => {
+      this.updateAll()
+    }, 1000)
+
+    this.setData({ mainTimer })
   },
 
-  updateAllCalculations() {
-    if (!this.data.settings) return
-
-    this.calculateWorkStatus()
-    this.calculateEarnings()
-    this.calculateCountdowns()
-    this.updateSlackingStatus()
-  },
-
-  calculateWorkStatus() {
+  updateAll() {
     const now = new Date()
     const settings = this.data.settings
+    if (!settings) return
+
+    // 更新工作状态和倒计时
+    const workStatus = this.calculateWorkStatus(now, settings)
+    
+    // 更新收入
+    const earnings = this.calculateEarnings(now, settings)
+    
+    // 更新状态
+    this.setData({
+      currentTime: now.toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'),
+      ...workStatus,
+      ...earnings
+    })
+
+    // 更新其他倒计时
+    this.calculateCountdowns()
+  },
+
+  calculateWorkStatus(now, settings) {
     const currentDay = now.getDay() || 7 // 将周日的0转换为7
-    const isWorkday = settings.workdays[currentDay - 1] // 数组索引从0开始
+    const isWorkday = settings.workdays[currentDay - 1]
 
     // 解析工作时间
     const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
     const [endHour, endMinute] = settings.workEndTime.split(':').map(Number)
-    const workStart = new Date(now.setHours(startHour, startMinute, 0))
-    const workEnd = new Date(now.setHours(endHour, endMinute, 0))
+    const workStart = new Date(now)
+    const workEnd = new Date(now)
+    
+    workStart.setHours(startHour, startMinute, 0, 0)
+    workEnd.setHours(endHour, endMinute, 0, 0)
 
     // 处理午休时间
     let isLunchBreak = false
     if (settings.lunchBreakEnabled) {
       const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
       const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
-      const lunchStart = new Date(now.setHours(lunchStartHour, lunchStartMinute, 0))
-      const lunchEnd = new Date(now.setHours(lunchEndHour, lunchEndMinute, 0))
+      const lunchStart = new Date(now)
+      const lunchEnd = new Date(now)
+      
+      lunchStart.setHours(lunchStartHour, lunchStartMinute, 0, 0)
+      lunchEnd.setHours(lunchEndHour, lunchEndMinute, 0, 0)
+      
       isLunchBreak = now >= lunchStart && now < lunchEnd
     }
 
@@ -203,122 +250,139 @@ Page({
 
     // 计算倒计时
     let countdown = { hours: '00', minutes: '00', seconds: '00' }
-    if (isWorkday) {
-      if (now < workEnd) {
-        const diff = workEnd - now
-        countdown = this.formatCountdown(diff)
+    if (isWorkday && now < workEnd) {
+      const diff = workEnd - now
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      countdown = {
+        hours: String(hours).padStart(2, '0'),
+        minutes: String(minutes).padStart(2, '0'),
+        seconds: String(seconds).padStart(2, '0')
       }
     }
 
-    this.setData({
+    return {
       workEndTime: settings.workEndTime,
-      workStatus: isWorkday ? (isWorkHours ? '工作时间' : '休息时间') : '非工作日',
+      workStatus: isWorkday ? (isWorkHours ? '工作时间' : (now >= workEnd ? '已下班' : '休息时间')) : '非工作日',
       canSlack,
       countdown
-    })
+    }
   },
 
-  calculateEarnings() {
-    const settings = this.data.settings
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const yearStart = new Date(now.getFullYear(), 0, 1)
+  calculateEarnings(now, settings) {
+    // 计算当月实际工作日数
+    const workDaysPerMonth = this.getWorkingDaysInMonth(now, settings.workdays)
+    
+    // 计算日工资
+    const dailySalary = settings.monthlySalary / workDaysPerMonth
+    
+    // 计算每天实际工作小时数
+    const workHoursPerDay = this.calculateWorkHoursPerDay(settings)
     
     // 计算时薪
-    const workHoursPerDay = this.calculateWorkHoursPerDay()
-    const workDaysPerMonth = this.data.settings.workdays.filter(day => day).length * 4
-    const monthlyWorkHours = workHoursPerDay * workDaysPerMonth
-    const hourlyRate = settings.monthlySalary / monthlyWorkHours
+    const hourlyRate = dailySalary / workHoursPerDay
+    
+    // 计算每秒收入
+    const secondRate = hourlyRate / 3600
 
-    // 计算今日收入
-    const todayEarnings = this.calculateTodayEarnings(hourlyRate)
+    // 检查是否是工作时间
+    const currentDay = now.getDay() || 7
+    const isWorkDay = settings.workdays[currentDay - 1]
+    
+    if (!isWorkDay) {
+      return {
+        hourlyRate: hourlyRate.toFixed(2),
+        todayEarnings: '0.00',
+        monthlySalary: settings.monthlySalary.toFixed(2),
+        monthEarnings: '0.00',
+        yearEarnings: '0.00'
+      }
+    }
 
-    // 计算本月收入
-    const monthEarnings = this.calculatePeriodEarnings(monthStart, now, hourlyRate)
+    // 计算工作时间
+    const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
+    const workStart = new Date(now)
+    workStart.setHours(startHour, startMinute, 0, 0)
 
-    // 计算今年收入
-    const yearEarnings = this.calculatePeriodEarnings(yearStart, now, hourlyRate)
+    if (now < workStart) {
+      return {
+        hourlyRate: hourlyRate.toFixed(2),
+        todayEarnings: '0.00',
+        monthlySalary: settings.monthlySalary.toFixed(2),
+        monthEarnings: '0.00',
+        yearEarnings: '0.00'
+      }
+    }
 
-    this.setData({
+    // 计算实际工作秒数
+    let workedSeconds = Math.floor((now - workStart) / 1000)
+
+    // 处理午休时间
+    if (settings.lunchBreakEnabled) {
+      const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
+      const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
+      
+      const lunchStart = new Date(now)
+      const lunchEnd = new Date(now)
+      
+      lunchStart.setHours(lunchStartHour, lunchStartMinute, 0, 0)
+      lunchEnd.setHours(lunchEndHour, lunchEndMinute, 0, 0)
+
+      if (now > lunchEnd) {
+        workedSeconds -= (lunchEnd - lunchStart) / 1000
+      } else if (now > lunchStart) {
+        workedSeconds -= (now - lunchStart) / 1000
+      }
+    }
+
+    // 确保工作秒数不为负
+    workedSeconds = Math.max(0, workedSeconds)
+
+    // 计算当前收入
+    const todayEarnings = workedSeconds * secondRate
+
+    // 计算月收入（已完成的工作日 + 今天的收入）
+    const currentDate = now.getDate()
+    let monthEarnings = 0
+    for (let day = 1; day < currentDate; day++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), day)
+      const dayOfWeek = date.getDay()
+      const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      if (settings.workdays[adjustedDay]) {
+        monthEarnings += dailySalary
+      }
+    }
+    monthEarnings += todayEarnings
+
+    // 计算年收入（已完成的月份 + 当月收入）
+    const currentMonth = now.getMonth()
+    let yearEarnings = currentMonth * settings.monthlySalary + monthEarnings
+
+    return {
       hourlyRate: hourlyRate.toFixed(2),
       todayEarnings: todayEarnings.toFixed(2),
       monthlySalary: settings.monthlySalary.toFixed(2),
       monthEarnings: monthEarnings.toFixed(2),
       yearEarnings: yearEarnings.toFixed(2)
-    })
+    }
   },
 
-  calculateWorkHoursPerDay() {
-    const settings = this.data.settings
-    let totalMinutes = 0
-
-    // 解析工作时间
+  calculateWorkHoursPerDay(settings) {
     const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
     const [endHour, endMinute] = settings.workEndTime.split(':').map(Number)
     
-    totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute)
+    let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute)
 
-    // 减去午休时间
     if (settings.lunchBreakEnabled) {
       const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
       const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
-      const lunchBreakMinutes = (lunchEndHour * 60 + lunchEndMinute) - (lunchStartHour * 60 + lunchStartMinute)
-      totalMinutes -= lunchBreakMinutes
+      const lunchMinutes = (lunchEndHour * 60 + lunchEndMinute) - (lunchStartHour * 60 + lunchStartMinute)
+      totalMinutes -= lunchMinutes
     }
 
     return totalMinutes / 60
-  },
-
-  calculateTodayEarnings(hourlyRate) {
-    const now = new Date()
-    const settings = this.data.settings
-    const currentDay = now.getDay() || 7
-    
-    if (!settings.workdays[currentDay - 1]) return 0
-
-    const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
-    const workStart = new Date(now.setHours(startHour, startMinute, 0))
-    
-    if (now < workStart) return 0
-
-    let workedMinutes = (now - workStart) / (1000 * 60)
-
-    // 减去午休时间
-    if (settings.lunchBreakEnabled) {
-      const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
-      const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
-      const lunchStart = new Date(now.setHours(lunchStartHour, lunchStartMinute, 0))
-      const lunchEnd = new Date(now.setHours(lunchEndHour, lunchEndMinute, 0))
-
-      if (now > lunchEnd) {
-        workedMinutes -= (lunchEnd - lunchStart) / (1000 * 60)
-      } else if (now > lunchStart) {
-        workedMinutes -= (now - lunchStart) / (1000 * 60)
-      }
-    }
-
-    return (workedMinutes / 60) * hourlyRate
-  },
-
-  calculatePeriodEarnings(startDate, endDate, hourlyRate) {
-    const settings = this.data.settings
-    let totalEarnings = 0
-    const workHoursPerDay = this.calculateWorkHoursPerDay()
-
-    for (let date = new Date(startDate); date <= endDate; date.setDate(date.getDate() + 1)) {
-      const dayOfWeek = date.getDay() || 7
-      if (settings.workdays[dayOfWeek - 1]) {
-        if (date < endDate) {
-          // 完整工作日
-          totalEarnings += workHoursPerDay * hourlyRate
-        } else {
-          // 当天
-          totalEarnings += this.calculateTodayEarnings(hourlyRate)
-        }
-      }
-    }
-
-    return totalEarnings
   },
 
   calculateCountdowns() {
@@ -422,14 +486,6 @@ Page({
     }
   },
 
-  onHide() {
-    this.stopSlackingTimer()
-  },
-
-  onUnload() {
-    this.stopSlackingTimer()
-  },
-
   goToSettings() {
     wx.switchTab({
       url: '/pages/profile/profile'
@@ -440,5 +496,309 @@ Page({
     this.setData({
       showSetupModal: false
     })
+  },
+
+  startCountdown() {
+    // 清除已有定时器
+    if (this.data.timer) {
+      clearInterval(this.data.timer)
+    }
+
+    const timer = setInterval(() => {
+      const now = new Date()
+      const endTime = this.getEndTime()
+      const diff = endTime - now
+
+      if (diff <= 0) {
+        // 已经下班
+        this.setData({
+          countdown: {
+            hours: '00',
+            minutes: '00',
+            seconds: '00'
+          },
+          workStatus: '已下班'
+        })
+        return
+      }
+
+      // 计算剩余时间
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      this.setData({
+        countdown: {
+          hours: hours.toString().padStart(2, '0'),
+          minutes: minutes.toString().padStart(2, '0'),
+          seconds: seconds.toString().padStart(2, '0')
+        },
+        workStatus: this.getWorkStatus()
+      })
+    }, 1000)
+
+    this.setData({ timer })
+  },
+
+  startEarningsCalculation() {
+    // 清除已有定时器
+    if (this.data.earningsTimer) {
+      clearInterval(this.data.earningsTimer)
+    }
+
+    const settings = wx.getStorageSync('settings') || {}
+    const monthlySalary = parseFloat(settings.salary) || 0
+    const workdays = settings.workdays || [1, 1, 1, 1, 1, 0, 0]
+    const workingDaysInMonth = this.getWorkingDaysInMonth(workdays)
+    const workHoursPerDay = this.calculateWorkHours(settings)
+    
+    // 计算每秒收入
+    const dailySalary = monthlySalary / workingDaysInMonth
+    const hourlyRate = dailySalary / workHoursPerDay
+    const secondRate = hourlyRate / 3600
+
+    const earningsTimer = setInterval(() => {
+      if (!this.isWorkTime()) {
+        return
+      }
+
+      // 计算今日工作时长（秒）
+      const workSeconds = this.calculateTodayWorkSeconds(settings)
+      
+      // 计算今日收入
+      const todayEarnings = (workSeconds * secondRate).toFixed(2)
+      
+      // 计算本月收入
+      const monthEarnings = this.calculateMonthEarnings(settings)
+      
+      // 计算今年收入
+      const yearEarnings = this.calculateYearEarnings(settings)
+
+      this.setData({
+        todayEarnings,
+        monthEarnings: monthEarnings.toFixed(2),
+        yearEarnings: yearEarnings.toFixed(2)
+      })
+    }, 1000)
+
+    this.setData({ earningsTimer })
+  },
+
+  getEndTime() {
+    const [hours, minutes] = this.data.workEndTime.split(':')
+    const endTime = new Date()
+    endTime.setHours(parseInt(hours))
+    endTime.setMinutes(parseInt(minutes))
+    endTime.setSeconds(0)
+    return endTime
+  },
+
+  isWorkTime() {
+    const now = new Date()
+    const settings = wx.getStorageSync('settings') || {}
+    const workdays = settings.workdays || [1, 1, 1, 1, 1, 0, 0]
+    const today = now.getDay()
+    const adjustedDay = today === 0 ? 6 : today - 1 // 将周日的6调整为数组中的索引
+
+    // 检查是否是工作日
+    if (!workdays[adjustedDay]) {
+      return false
+    }
+
+    // 检查是否在工作时间内
+    const [startHour, startMinute] = (settings.workStartTime || '09:00').split(':')
+    const [endHour, endMinute] = (settings.workEndTime || '18:00').split(':')
+    const startTime = new Date()
+    const endTime = new Date()
+    
+    startTime.setHours(parseInt(startHour), parseInt(startMinute), 0)
+    endTime.setHours(parseInt(endHour), parseInt(endMinute), 0)
+
+    return now >= startTime && now <= endTime
+  },
+
+  getWorkStatus() {
+    if (!this.isWorkTime()) {
+      return '休息时间'
+    }
+    return '工作时间'
+  },
+
+  calculateWorkHours(settings) {
+    const startTime = settings.workStartTime || '09:00'
+    const endTime = settings.workEndTime || '18:00'
+    const hasLunchBreak = settings.hasLunchBreak
+    const lunchStartTime = settings.lunchStartTime || '12:00'
+    const lunchEndTime = settings.lunchEndTime || '13:00'
+
+    const [startHour, startMinute] = startTime.split(':')
+    const [endHour, endMinute] = endTime.split(':')
+    const workMinutes = (parseInt(endHour) * 60 + parseInt(endMinute)) - 
+                       (parseInt(startHour) * 60 + parseInt(startMinute))
+
+    if (hasLunchBreak) {
+      const [lunchStartHour, lunchStartMinute] = lunchStartTime.split(':')
+      const [lunchEndHour, lunchEndMinute] = lunchEndTime.split(':')
+      const lunchMinutes = (parseInt(lunchEndHour) * 60 + parseInt(lunchEndMinute)) - 
+                          (parseInt(lunchStartHour) * 60 + parseInt(lunchStartMinute))
+      return (workMinutes - lunchMinutes) / 60
+    }
+
+    return workMinutes / 60
+  },
+
+  calculateTodayWorkSeconds(settings) {
+    if (!this.isWorkTime()) {
+      return 0
+    }
+
+    const now = new Date()
+    const [startHour, startMinute] = (settings.workStartTime || '09:00').split(':')
+    const startTime = new Date()
+    startTime.setHours(parseInt(startHour), parseInt(startMinute), 0)
+
+    let workSeconds = Math.floor((now - startTime) / 1000)
+
+    // 如果有午休时间，需要减去
+    if (settings.hasLunchBreak) {
+      const [lunchStartHour, lunchStartMinute] = (settings.lunchStartTime || '12:00').split(':')
+      const [lunchEndHour, lunchEndMinute] = (settings.lunchEndTime || '13:00').split(':')
+      const lunchStart = new Date()
+      const lunchEnd = new Date()
+      
+      lunchStart.setHours(parseInt(lunchStartHour), parseInt(lunchStartMinute), 0)
+      lunchEnd.setHours(parseInt(lunchEndHour), parseInt(lunchEndMinute), 0)
+
+      if (now > lunchEnd) {
+        // 已经过了午休时间
+        workSeconds -= (lunchEnd - lunchStart) / 1000
+      } else if (now > lunchStart) {
+        // 正在午休时间
+        workSeconds -= (now - lunchStart) / 1000
+      }
+    }
+
+    return Math.max(0, workSeconds)
+  },
+
+  getWorkingDaysInMonth(date, workdays) {
+    const year = date.getFullYear()
+    const month = date.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    let workingDays = 0
+
+    // 遍历当月的每一天
+    for (let day = 1; day <= daysInMonth; day++) {
+      const currentDate = new Date(year, month, day)
+      const dayOfWeek = currentDate.getDay()
+      // 将周日的0转换为7，以匹配workdays数组
+      const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      if (workdays[adjustedDay]) {
+        workingDays++
+      }
+    }
+
+    // 如果当月没有工作日（极端情况），返回默认值避免除以0
+    return Math.max(workingDays, 1)
+  },
+
+  calculateMonthEarnings(now, settings) {
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const currentDate = now.getDate()
+    let totalEarnings = 0
+
+    // 获取当月工作日数和日工资
+    const workDaysPerMonth = this.getWorkingDaysInMonth(now, settings.workdays)
+    const dailySalary = settings.monthlySalary / workDaysPerMonth
+
+    // 计算已完成工作日的收入
+    for (let day = 1; day < currentDate; day++) {
+      const date = new Date(year, month, day)
+      const dayOfWeek = date.getDay() || 7
+      const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      if (settings.workdays[adjustedDay]) {
+        totalEarnings += dailySalary
+      }
+    }
+
+    // 加上今天的收入（如果是工作日）
+    const today = now.getDay() || 7
+    const adjustedToday = today === 0 ? 6 : today - 1
+    if (settings.workdays[adjustedToday]) {
+      // 获取今日已工作时间的收入
+      const workHoursPerDay = this.calculateWorkHoursPerDay(settings)
+      const hourlyRate = dailySalary / workHoursPerDay
+      const secondRate = hourlyRate / 3600
+      const workedSeconds = this.calculateWorkedSeconds(now, settings)
+      const todayEarnings = workedSeconds * secondRate
+      totalEarnings += todayEarnings
+    }
+
+    return totalEarnings
+  },
+
+  calculateWorkedSeconds(now, settings) {
+    // 检查是否是工作日
+    const currentDay = now.getDay() || 7
+    const adjustedDay = currentDay === 0 ? 6 : currentDay - 1
+    if (!settings.workdays[adjustedDay]) return 0
+
+    // 创建工作开始时间
+    const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
+    const workStart = new Date(now)
+    workStart.setHours(startHour, startMinute, 0, 0)
+
+    if (now < workStart) return 0
+
+    // 创建工作结束时间
+    const [endHour, endMinute] = settings.workEndTime.split(':').map(Number)
+    const workEnd = new Date(now)
+    workEnd.setHours(endHour, endMinute, 0, 0)
+
+    // 如果已经超过下班时间，使用下班时间计算
+    if (now > workEnd) {
+      now = new Date(workEnd)
+    }
+
+    // 计算工作秒数
+    let workedSeconds = Math.floor((now - workStart) / 1000)
+
+    // 处理午休时间
+    if (settings.lunchBreakEnabled) {
+      const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
+      const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
+      
+      const lunchStart = new Date(now)
+      const lunchEnd = new Date(now)
+      
+      lunchStart.setHours(lunchStartHour, lunchStartMinute, 0, 0)
+      lunchEnd.setHours(lunchEndHour, lunchEndMinute, 0, 0)
+
+      if (now > lunchEnd) {
+        // 已经过了午休时间，减去整个午休时间
+        workedSeconds -= (lunchEnd - lunchStart) / 1000
+      } else if (now > lunchStart) {
+        // 正在午休，减去已经过去的午休时间
+        workedSeconds -= (now - lunchStart) / 1000
+      }
+    }
+
+    return Math.max(0, workedSeconds)
+  },
+
+  calculateYearEarnings(now, settings, monthEarnings) {
+    const currentMonth = now.getMonth()
+    let totalEarnings = 0
+
+    // 1. 计算已完成月份的收入
+    for (let month = 0; month < currentMonth; month++) {
+      totalEarnings += settings.monthlySalary
+    }
+
+    // 2. 加上当月收入
+    totalEarnings += monthEarnings
+
+    return totalEarnings
   }
 })
