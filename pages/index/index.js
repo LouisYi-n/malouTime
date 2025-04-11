@@ -119,13 +119,18 @@ Page({
   // 更新当前时间
   updateCurrentTime() {
     const now = new Date()
+    const dateString = now.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
     const timeString = now.toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       hour12: false
     })
-    this.setData({ currentTime: timeString })
+    this.setData({ currentTime: `${dateString} ${timeString}` })
   },
 
   // 页面加载时执行
@@ -166,10 +171,6 @@ Page({
     
     // 启动主计时器
     this.startMainTimer()
-    
-    // 更新当前时间
-    this.updateCurrentTime()
-    setInterval(() => this.updateCurrentTime(), 1000)
   },
 
   // 页面显示时执行
@@ -231,10 +232,12 @@ Page({
     })
 
     // 立即执行一次更新
+    this.updateCurrentTime()
     this.updateAll()
 
     // 设置计时器每秒更新
     const mainTimer = setInterval(() => {
+      this.updateCurrentTime()
       this.updateAll()
     }, 1000)
 
@@ -255,7 +258,6 @@ Page({
     
     // 更新状态
     this.setData({
-      currentTime: now.toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-'),
       ...workStatus,
       ...earnings
     })
