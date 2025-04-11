@@ -1,6 +1,8 @@
+const app = getApp()
+
 Page({
   data: {
-    currentColor: 'mint',
+    currentColor: '',
     colors: {
       mint: '#98D8C8',      // 薄荷绿
       lavender: '#E6E6FA',  // 薰衣草紫
@@ -16,12 +18,9 @@ Page({
   },
 
   onLoad() {
-    // Load saved color from storage
-    const savedColor = wx.getStorageSync('backgroundColor')
-    if (savedColor) {
-      this.setData({ currentColor: savedColor })
-      this.updateAppBackground(savedColor)
-    }
+    // 获取当前背景色
+    const backgroundColor = app.globalData.backgroundColor || '#FFE7BA'
+    this.setData({ currentColor: backgroundColor })
   },
 
   onShow() {
@@ -49,7 +48,6 @@ Page({
       })
 
       // 更新全局背景色
-      const app = getApp()
       app.globalData.backgroundColor = color
       app.globalData.currentTheme = colorKey
 
@@ -97,6 +95,27 @@ Page({
           duration: 1000
         })
       }
+    })
+  },
+
+  changeColor(e) {
+    const color = e.currentTarget.dataset.color
+    // 更新全局背景色
+    app.globalData.backgroundColor = color
+    
+    // 保存到本地存储
+    wx.setStorageSync('backgroundColor', color)
+    
+    // 触发主题变更事件
+    if (wx.eventCenter && wx.eventCenter.themeChange) {
+      wx.eventCenter.themeChange.forEach(callback => callback(color))
+    }
+    
+    // 显示提示
+    wx.showToast({
+      title: '背景色已更新',
+      icon: 'success',
+      duration: 1500
     })
   }
 }) 

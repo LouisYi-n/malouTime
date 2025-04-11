@@ -1,97 +1,122 @@
 // index.js
+// 获取全局应用实例
 const app = getApp()
 
 Page({
+  // 页面数据
   data: {
+    // 当前时间
     currentTime: '',
+    // 下班倒计时
     countdown: {
       hours: '00',
       minutes: '00',
       seconds: '00'
     },
+    // 下班时间
     workEndTime: '18:00',
+    // 工作状态
     workStatus: '工作时间',
+    // 今日收入
     todayEarnings: '0.00',
+    // 月薪
     monthlySalary: '0.00',
+    // 时薪
     hourlyRate: '0.00',
+    // 本月收入
     monthEarnings: '0.00',
+    // 本年收入
     yearEarnings: '0.00',
+    // 发薪日倒计时
     paydayCountdown: '计算中...',
+    // 摸鱼状态
     slackingStatus: '摸鱼计时',
+    // 摸鱼时长
     slackingTime: '00:00:00',
+    // 摸鱼按钮文本
     slackingBtnText: '开始摸鱼',
+    // 退休天数
     retirementDays: '0',
+    // 入职天数
     employmentDays: '0',
+    // 是否正在摸鱼
     isSlacking: false,
+    // 是否可以摸鱼
     canSlack: false,
+    // 是否显示设置弹窗
     showSetupModal: false,
     // 默认设置
     settings: {
-      monthlySalary: 10000,
-      workStartTime: '09:00',
-      workEndTime: '18:00',
-      lunchBreakEnabled: true,
-      lunchBreakStart: '12:00',
-      lunchBreakEnd: '13:00',
-      workdays: [true, true, true, true, true, false, false],
-      payday: 10,
-      employmentDate: '2024-01-01',
-      retirementDate: '2055-01-01'
+      monthlySalary: 10000,          // 月薪
+      workStartTime: '09:00',        // 上班时间
+      workEndTime: '18:00',          // 下班时间
+      lunchBreakEnabled: true,       // 是否启用午休
+      lunchBreakStart: '12:00',      // 午休开始时间
+      lunchBreakEnd: '13:00',        // 午休结束时间
+      workdays: [true, true, true, true, true, false, false], // 工作日设置（周一到周日）
+      payday: 10,                    // 发薪日
+      employmentDate: '2024-01-01',  // 入职日期
+      retirementDate: '2055-01-01'   // 退休日期
     },
-    // 默认开启所有卡片
+    // 卡片设置
     cardSettings: [
       {
-        id: 'incomeInfo',
+        id: 'incomeInfo',           // 收入信息卡片
         name: '收入信息',
         desc: '显示工资相关信息',
         enabled: true
       },
       {
-        id: 'workCountdown',
+        id: 'workCountdown',        // 下班倒计时卡片
         name: '下班倒计时',
         desc: '显示距离下班的时间',
         enabled: true
       },
       {
-        id: 'slackingTimer',
+        id: 'slackingTimer',        // 摸鱼计时卡片
         name: '摸鱼计时',
         desc: '记录摸鱼时长',
         enabled: true
       },
       {
-        id: 'holidayCountdown',
+        id: 'holidayCountdown',     // 放假倒计时卡片
         name: '放假倒计时',
         desc: '显示距离放假的时间',
         enabled: true
       },
       {
-        id: 'paydayCountdown',
+        id: 'paydayCountdown',      // 发薪日倒计时卡片
         name: '发薪日倒计时',
         desc: '显示距离发工资的时间',
         enabled: true
       },
       {
-        id: 'retirementCountdown',
+        id: 'retirementCountdown',  // 退休倒计时卡片
         name: '退休倒计时',
         desc: '显示距离退休的时间',
         enabled: true
       },
       {
-        id: 'employmentDuration',
+        id: 'employmentDuration',   // 入职天数卡片
         name: '入职天数',
         desc: '显示已入职的天数',
         enabled: true
       }
     ],
+    // 背景颜色
     backgroundColor: getApp().globalData.backgroundColor || '#FFE7BA',
+    // 计时器
     timer: null,
     earningsTimer: null,
     mainTimer: null,
     slackingTimer: null,
+    // 上次计算时间
     lastCalculatedTime: null,
+    // 累计收入
     accumulatedEarnings: 0
   },
 
+  // 页面加载时执行
   onLoad() {
     // 获取保存的背景色
     const app = getApp()
@@ -131,6 +156,7 @@ Page({
     this.startMainTimer()
   },
 
+  // 页面显示时执行
   onShow() {
     // 每次显示页面时更新背景色
     const app = getApp()
@@ -154,14 +180,17 @@ Page({
     this.startMainTimer()
   },
 
+  // 页面隐藏时执行
   onHide() {
     this.stopAllTimers()
   },
 
+  // 页面卸载时执行
   onUnload() {
     this.stopAllTimers()
   },
 
+  // 停止所有计时器
   stopAllTimers() {
     if (this.data.mainTimer) {
       clearInterval(this.data.mainTimer)
@@ -173,6 +202,7 @@ Page({
     }
   },
 
+  // 启动主计时器
   startMainTimer() {
     if (this.data.mainTimer) {
       clearInterval(this.data.mainTimer)
@@ -195,6 +225,7 @@ Page({
     this.setData({ mainTimer })
   },
 
+  // 更新所有信息
   updateAll() {
     const now = new Date()
     const settings = this.data.settings
@@ -217,6 +248,7 @@ Page({
     this.calculateCountdowns()
   },
 
+  // 计算工作状态
   calculateWorkStatus(now, settings) {
     const currentDay = now.getDay() || 7 // 将周日的0转换为7
     const isWorkday = settings.workdays[currentDay - 1]
@@ -248,117 +280,54 @@ Page({
     const isWorkHours = now >= workStart && now < workEnd && (!settings.lunchBreakEnabled || !isLunchBreak)
     const canSlack = isWorkday && isWorkHours
 
-    // 计算倒计时
+    // 计算下班倒计时
     let countdown = { hours: '00', minutes: '00', seconds: '00' }
     if (isWorkday && now < workEnd) {
       const diff = workEnd - now
       const hours = Math.floor(diff / (1000 * 60 * 60))
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
       const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-
+      
       countdown = {
-        hours: String(hours).padStart(2, '0'),
-        minutes: String(minutes).padStart(2, '0'),
-        seconds: String(seconds).padStart(2, '0')
+        hours: hours.toString().padStart(2, '0'),
+        minutes: minutes.toString().padStart(2, '0'),
+        seconds: seconds.toString().padStart(2, '0')
       }
+    }
+
+    // 确定工作状态
+    let workStatus = '工作时间'
+    if (!isWorkday) {
+      workStatus = '休息日'
+    } else if (isLunchBreak) {
+      workStatus = '午休时间'
+    } else if (!isWorkHours) {
+      workStatus = '非工作时间'
     }
 
     return {
-      workEndTime: settings.workEndTime,
-      workStatus: isWorkday ? (isWorkHours ? '工作时间' : (now >= workEnd ? '已下班' : '休息时间')) : '非工作日',
+      workStatus,
+      countdown,
       canSlack,
-      countdown
+      workEndTime: settings.workEndTime
     }
   },
 
+  // 计算收入
   calculateEarnings(now, settings) {
-    // 计算当月实际工作日数
-    const workDaysPerMonth = this.getWorkingDaysInMonth(now, settings.workdays)
-    
-    // 计算日工资
-    const dailySalary = settings.monthlySalary / workDaysPerMonth
-    
-    // 计算每天实际工作小时数
-    const workHoursPerDay = this.calculateWorkHoursPerDay(settings)
-    
     // 计算时薪
-    const hourlyRate = dailySalary / workHoursPerDay
+    const workHoursPerDay = this.calculateWorkHoursPerDay(settings)
+    const hourlyRate = settings.monthlySalary / (workHoursPerDay * this.getWorkingDaysInMonth(now, settings.workdays))
     
-    // 计算每秒收入
-    const secondRate = hourlyRate / 3600
-
-    // 检查是否是工作时间
-    const currentDay = now.getDay() || 7
-    const isWorkDay = settings.workdays[currentDay - 1]
+    // 计算今日收入
+    const todayWorkSeconds = this.calculateTodayWorkSeconds(settings)
+    const todayEarnings = (todayWorkSeconds / 3600) * hourlyRate
     
-    if (!isWorkDay) {
-      return {
-        hourlyRate: hourlyRate.toFixed(2),
-        todayEarnings: '0.00',
-        monthlySalary: settings.monthlySalary.toFixed(2),
-        monthEarnings: '0.00',
-        yearEarnings: '0.00'
-      }
-    }
-
-    // 计算工作时间
-    const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
-    const workStart = new Date(now)
-    workStart.setHours(startHour, startMinute, 0, 0)
-
-    if (now < workStart) {
-      return {
-        hourlyRate: hourlyRate.toFixed(2),
-        todayEarnings: '0.00',
-        monthlySalary: settings.monthlySalary.toFixed(2),
-        monthEarnings: '0.00',
-        yearEarnings: '0.00'
-      }
-    }
-
-    // 计算实际工作秒数
-    let workedSeconds = Math.floor((now - workStart) / 1000)
-
-    // 处理午休时间
-    if (settings.lunchBreakEnabled) {
-      const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
-      const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
-      
-      const lunchStart = new Date(now)
-      const lunchEnd = new Date(now)
-      
-      lunchStart.setHours(lunchStartHour, lunchStartMinute, 0, 0)
-      lunchEnd.setHours(lunchEndHour, lunchEndMinute, 0, 0)
-
-      if (now > lunchEnd) {
-        workedSeconds -= (lunchEnd - lunchStart) / 1000
-      } else if (now > lunchStart) {
-        workedSeconds -= (now - lunchStart) / 1000
-      }
-    }
-
-    // 确保工作秒数不为负
-    workedSeconds = Math.max(0, workedSeconds)
-
-    // 计算当前收入
-    const todayEarnings = workedSeconds * secondRate
-
-    // 计算月收入（已完成的工作日 + 今天的收入）
-    const currentDate = now.getDate()
-    let monthEarnings = 0
-    for (let day = 1; day < currentDate; day++) {
-      const date = new Date(now.getFullYear(), now.getMonth(), day)
-      const dayOfWeek = date.getDay()
-      const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-      if (settings.workdays[adjustedDay]) {
-        monthEarnings += dailySalary
-      }
-    }
-    monthEarnings += todayEarnings
-
-    // 计算年收入（已完成的月份 + 当月收入）
-    const currentMonth = now.getMonth()
-    let yearEarnings = currentMonth * settings.monthlySalary + monthEarnings
+    // 计算本月收入
+    const monthEarnings = this.calculateMonthEarnings(now, settings)
+    
+    // 计算本年收入
+    const yearEarnings = this.calculateYearEarnings(now, settings, monthEarnings)
 
     return {
       hourlyRate: hourlyRate.toFixed(2),
@@ -369,133 +338,130 @@ Page({
     }
   },
 
+  // 计算每天工作小时数
   calculateWorkHoursPerDay(settings) {
     const [startHour, startMinute] = settings.workStartTime.split(':').map(Number)
     const [endHour, endMinute] = settings.workEndTime.split(':').map(Number)
     
-    let totalMinutes = (endHour * 60 + endMinute) - (startHour * 60 + startMinute)
-
+    let totalHours = (endHour - startHour) + (endMinute - startMinute) / 60
+    
+    // 减去午休时间
     if (settings.lunchBreakEnabled) {
       const [lunchStartHour, lunchStartMinute] = settings.lunchBreakStart.split(':').map(Number)
       const [lunchEndHour, lunchEndMinute] = settings.lunchBreakEnd.split(':').map(Number)
-      const lunchMinutes = (lunchEndHour * 60 + lunchEndMinute) - (lunchStartHour * 60 + lunchStartMinute)
-      totalMinutes -= lunchMinutes
+      const lunchBreakHours = (lunchEndHour - lunchStartHour) + (lunchEndMinute - lunchStartMinute) / 60
+      totalHours -= lunchBreakHours
     }
-
-    return totalMinutes / 60
+    
+    return totalHours
   },
 
+  // 计算倒计时
   calculateCountdowns() {
-    const settings = this.data.settings
     const now = new Date()
-
-    // 计算发薪日倒计时
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const payday = new Date(currentYear, currentMonth, settings.payday)
+    const settings = this.data.settings
     
-    if (now > payday) {
+    // 计算发薪日倒计时
+    const payday = new Date(now)
+    payday.setDate(settings.payday)
+    if (now.getDate() > settings.payday) {
       payday.setMonth(payday.getMonth() + 1)
     }
-    
     const paydayDiff = payday - now
-    const paydayCountdown = this.formatCountdown(paydayDiff)
-
-    // 计算退休倒计时
-    const retirement = new Date(settings.retirementDate)
-    const retirementDays = Math.ceil((retirement - now) / (1000 * 60 * 60 * 24))
-
-    // 计算入职天数
-    const employment = new Date(settings.employmentDate)
-    const employmentDays = Math.ceil((now - employment) / (1000 * 60 * 60 * 24))
-
-    this.setData({
-      paydayCountdown: `${paydayCountdown.days}天${paydayCountdown.hours}时${paydayCountdown.minutes}分${paydayCountdown.seconds}秒`,
-      retirementDays,
-      employmentDays
-    })
-  },
-
-  formatCountdown(ms) {
-    const seconds = Math.floor((ms / 1000) % 60)
-    const minutes = Math.floor((ms / 1000 / 60) % 60)
-    const hours = Math.floor((ms / 1000 / 60 / 60) % 24)
-    const days = Math.floor(ms / 1000 / 60 / 60 / 24)
-
-    return {
-      days: String(days).padStart(2, '0'),
-      hours: String(hours).padStart(2, '0'),
-      minutes: String(minutes).padStart(2, '0'),
-      seconds: String(seconds).padStart(2, '0')
-    }
-  },
-
-  toggleSlacking() {
-    if (!this.data.canSlack) {
-      wx.showToast({
-        title: this.data.workStatus === '非工作日' ? '非工作日无法摸鱼' : '下班时间无法摸鱼',
-        icon: 'none'
-      })
-      return
-    }
-
-    const isSlacking = !this.data.isSlacking
-    this.setData({
-      isSlacking,
-      slackingBtnText: isSlacking ? '暂停摸鱼' : '开始摸鱼'
-    })
-
-    if (isSlacking) {
-      this.startSlackingTimer()
-    } else {
-      this.stopSlackingTimer()
-    }
-  },
-
-  startSlackingTimer() {
-    if (this.slackingTimer) return
+    const paydayDays = Math.ceil(paydayDiff / (1000 * 60 * 60 * 24))
+    this.setData({ paydayCountdown: `${paydayDays}天` })
     
-    const startTime = Date.now() - (this.data.slackingSeconds || 0) * 1000
-    this.slackingTimer = setInterval(() => {
-      const seconds = Math.floor((Date.now() - startTime) / 1000)
+    // 计算退休倒计时
+    const retirementDate = new Date(settings.retirementDate)
+    const retirementDiff = retirementDate - now
+    const retirementDays = Math.ceil(retirementDiff / (1000 * 60 * 60 * 24))
+    this.setData({ retirementDays: retirementDays.toString() })
+    
+    // 计算入职天数
+    const employmentDate = new Date(settings.employmentDate)
+    const employmentDiff = now - employmentDate
+    const employmentDays = Math.floor(employmentDiff / (1000 * 60 * 60 * 24))
+    this.setData({ employmentDays: employmentDays.toString() })
+  },
+
+  // 格式化倒计时
+  formatCountdown(ms) {
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+    
+    return `${days}天${hours}时${minutes}分${seconds}秒`
+  },
+
+  // 切换摸鱼状态
+  toggleSlacking() {
+    if (!this.data.canSlack) return
+    
+    if (this.data.isSlacking) {
+      this.stopSlackingTimer()
+    } else {
+      this.startSlackingTimer()
+    }
+  },
+
+  // 开始摸鱼计时
+  startSlackingTimer() {
+    if (this.data.slackingTimer) {
+      clearInterval(this.data.slackingTimer)
+    }
+    
+    this.setData({
+      isSlacking: true,
+      slackingBtnText: '结束摸鱼',
+      slackingTime: '00:00:00'
+    })
+    
+    let seconds = 0
+    const slackingTimer = setInterval(() => {
+      seconds++
       const hours = Math.floor(seconds / 3600)
       const minutes = Math.floor((seconds % 3600) / 60)
-      const remainingSeconds = seconds % 60
+      const secs = seconds % 60
       
       this.setData({
-        slackingTime: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`,
-        slackingSeconds: seconds
+        slackingTime: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
       })
     }, 1000)
+    
+    this.setData({ slackingTimer })
   },
 
+  // 停止摸鱼计时
   stopSlackingTimer() {
-    if (this.slackingTimer) {
-      clearInterval(this.slackingTimer)
-      this.slackingTimer = null
+    if (this.data.slackingTimer) {
+      clearInterval(this.data.slackingTimer)
+      this.data.slackingTimer = null
     }
+    
+    this.setData({
+      isSlacking: false,
+      slackingBtnText: '开始摸鱼'
+    })
   },
 
+  // 更新摸鱼状态
   updateSlackingStatus() {
-    if (!this.data.canSlack) {
-      this.setData({
-        slackingBtnText: '非工作时间',
-        isSlacking: false
-      })
+    if (!this.data.canSlack && this.data.isSlacking) {
       this.stopSlackingTimer()
     }
   },
 
+  // 跳转到设置页面
   goToSettings() {
     wx.switchTab({
       url: '/pages/profile/profile'
     })
   },
 
+  // 关闭设置弹窗
   closeSetupModal() {
-    this.setData({
-      showSetupModal: false
-    })
+    this.setData({ showSetupModal: false })
   },
 
   startCountdown() {
@@ -715,7 +681,7 @@ Page({
     // 计算已完成工作日的收入
     for (let day = 1; day < currentDate; day++) {
       const date = new Date(year, month, day)
-      const dayOfWeek = date.getDay() || 7
+      const dayOfWeek = date.getDay()
       const adjustedDay = dayOfWeek === 0 ? 6 : dayOfWeek - 1
       if (settings.workdays[adjustedDay]) {
         totalEarnings += dailySalary
@@ -723,7 +689,7 @@ Page({
     }
 
     // 加上今天的收入（如果是工作日）
-    const today = now.getDay() || 7
+    const today = now.getDay()
     const adjustedToday = today === 0 ? 6 : today - 1
     if (settings.workdays[adjustedToday]) {
       // 获取今日已工作时间的收入

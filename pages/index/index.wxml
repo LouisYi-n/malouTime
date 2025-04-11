@@ -1,4 +1,5 @@
 <!--index.wxml-->
+<!-- 导航栏组件 -->
 <navigation-bar 
   title="牛马时钟"
   back="{{false}}"
@@ -6,6 +7,7 @@
   background="{{backgroundColor}}"
 />
 
+<!-- 主容器 -->
 <view class="container" style="background-color: {{backgroundColor}};">
   <!-- 下班倒计时卡片 -->
   <view class="countdown-card" wx:if="{{cardSettings[1].enabled}}">
@@ -50,13 +52,13 @@
     </view>
   </view>
 
-  <!-- 发薪日倒计时 -->
+  <!-- 发薪日倒计时卡片 -->
   <view class="info-card" wx:if="{{cardSettings[4].enabled}}">
     <view class="info-title">距离发工资还有</view>
     <view class="info-value">{{paydayCountdown}}</view>
   </view>
 
-  <!-- 摸鱼计时 -->
+  <!-- 摸鱼计时卡片 -->
   <view class="info-card" wx:if="{{cardSettings[2].enabled}}">
     <view class="info-title">{{slackingStatus}}</view>
     <view class="info-value">{{slackingTime}}</view>
@@ -67,13 +69,13 @@
     </button>
   </view>
 
-  <!-- 退休倒计时 -->
+  <!-- 退休倒计时卡片 -->
   <view class="info-card" wx:if="{{cardSettings[5].enabled}}">
     <view class="info-title">距离退休</view>
     <view class="info-value">{{retirementDays}}天</view>
   </view>
 
-  <!-- 入职天数 -->
+  <!-- 入职天数卡片 -->
   <view class="info-card" wx:if="{{cardSettings[6].enabled}}">
     <view class="info-title">已入职</view>
     <view class="info-value">{{employmentDays}}天</view>
