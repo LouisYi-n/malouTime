@@ -68,6 +68,12 @@ Page({
     }
   },
 
+  onBack() {
+    wx.navigateBack({
+      delta: 1
+    });
+  },
+
   onSwitchChange(e) {
     const id = e.currentTarget.dataset.id
     const index = this.data.cardSettings.findIndex(item => item.id === id)

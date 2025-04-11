@@ -25,22 +25,29 @@ Page({
     this.loadSettings();
   },
 
+  // 处理返回按钮点击
+  onBack() {
+    wx.navigateBack({
+      delta: 1
+    });
+  },
+
   // 加载设置
   loadSettings() {
-    const settings = wx.getStorageSync('settings');
+    const settings = wx.getStorageSync('settings')
     if (settings) {
       this.setData({
-        salary: settings.monthlySalary.toString(),
-        workStartTime: settings.workStartTime,
-        workEndTime: settings.workEndTime,
-        hasLunchBreak: settings.lunchBreakEnabled,
-        lunchStartTime: settings.lunchBreakStart,
-        lunchEndTime: settings.lunchBreakEnd,
-        workdays: settings.workdays,
-        payDayIndex: settings.payday - 1,
-        joinDate: settings.employmentDate,
-        retireDate: settings.retirementDate
-      });
+        salary: settings.salary || this.data.salary,
+        workStartTime: settings.workStartTime || this.data.workStartTime,
+        workEndTime: settings.workEndTime || this.data.workEndTime,
+        hasLunchBreak: settings.hasLunchBreak !== undefined ? settings.hasLunchBreak : this.data.hasLunchBreak,
+        lunchStartTime: settings.lunchStartTime || this.data.lunchStartTime,
+        lunchEndTime: settings.lunchEndTime || this.data.lunchEndTime,
+        workdays: settings.workdays || this.data.workdays,
+        payDayIndex: settings.payDayIndex || this.data.payDayIndex,
+        joinDate: settings.joinDate || this.data.joinDate,
+        retireDate: settings.retireDate || this.data.retireDate
+      })
     }
   },
 

@@ -9,6 +9,12 @@
 
 <!-- 主容器 -->
 <view class="container" style="background-color: {{backgroundColor}};">
+  <!-- 标题和时间显示 -->
+  <view class="header">
+    <view class="title">时间牛马</view>
+    <view class="current-time">{{currentTime}}</view>
+  </view>
+
   <!-- 下班倒计时卡片 -->
   <view class="countdown-card" wx:if="{{cardSettings[1].enabled}}">
     <view class="countdown-title">距离下班还有</view>
@@ -59,7 +65,7 @@
   </view>
 
   <!-- 摸鱼计时卡片 -->
-  <view class="info-card" wx:if="{{cardSettings[2].enabled}}">
+  <view class="info-card-moyu" wx:if="{{cardSettings[2].enabled}}">
     <view class="info-title">{{slackingStatus}}</view>
     <view class="info-value">{{slackingTime}}</view>
     <button class="slacking-btn {{!canSlack ? 'disabled' : ''}}" 

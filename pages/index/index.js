@@ -116,6 +116,18 @@ Page({
     accumulatedEarnings: 0
   },
 
+  // 更新当前时间
+  updateCurrentTime() {
+    const now = new Date()
+    const timeString = now.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+    this.setData({ currentTime: timeString })
+  },
+
   // 页面加载时执行
   onLoad() {
     // 获取保存的背景色
@@ -154,6 +166,10 @@ Page({
     
     // 启动主计时器
     this.startMainTimer()
+    
+    // 更新当前时间
+    this.updateCurrentTime()
+    setInterval(() => this.updateCurrentTime(), 1000)
   },
 
   // 页面显示时执行

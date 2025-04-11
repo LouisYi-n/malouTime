@@ -29,6 +29,7 @@ page {
   margin: 0 24rpx 24rpx 24rpx;
   box-sizing: border-box;
   width: calc(100% - 48rpx); /* 考虑左右边距 */
+  border-radius: 16rpx;
 }
 
 .card-title {
