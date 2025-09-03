@@ -172,23 +172,8 @@ Page({
     // 启动主计时器
     this.startMainTimer()
 
-      // 用户点击右上角分享或转发按钮
-    onShareAppMessage() {
-      return {
-        title: '时间牛马 - 你的贴心工作助手',
-        path: '/pages/index/index',
-        imageUrl: '/assets/share-image.png' // 如果有分享图片的话
-      }
-    }
-
-    // 分享到朋友圈
-    onShareTimeline() {
-      return {
-        title: '时间牛马 - 你的贴心工作助手',
-        query: '',
-        imageUrl: '/assets/share-image.png' // 如果有分享图片的话
-      }
-    }
+    this.onShareAppMessage();
+    this.onShareTimeline();
   },
 
   // 页面显示时执行
@@ -213,6 +198,24 @@ Page({
     
     // 重启主计时器
     this.startMainTimer()
+  },
+
+  // 用户点击右上角分享或转发按钮
+  onShareAppMessage() {
+    return {
+      title: '时间牛马 - 你的贴心工作助手',
+      path: '/pages/index/index',
+      imageUrl: '/assets/share-image.png' // 如果有分享图片的话
+    }
+  },
+  
+  // 分享到朋友圈
+  onShareTimeline() {
+    return {
+      title: '时间牛马 - 你的贴心工作助手',
+      query: '',
+      imageUrl: '/assets/share-image.png' // 如果有分享图片的话
+    }
   },
 
   // 页面隐藏时执行
